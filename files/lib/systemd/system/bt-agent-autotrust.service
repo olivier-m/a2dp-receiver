@@ -1,0 +1,16 @@
+[Unit]
+Description=Pulse Audio
+Requires=bluetooth.service
+After=bluetooth.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=idle
+ExecStartPre=/usr/bin/hciconfig hci0 piscan
+ExecStart=/usr/bin/python /usr/bin/bt-agent-autotrust.py
+Restart=always
+RestartSec=10
+StartLimitInterval=30
+StartLimitBurst=20

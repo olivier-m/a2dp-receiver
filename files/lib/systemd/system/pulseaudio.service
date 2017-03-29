@@ -1,0 +1,10 @@
+[Unit]
+Description=Pulse Audio
+After=bluetooth.service
+
+[Install]
+WantedBy=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/pulseaudio --system --disallow-exit --disable-shm --realtime --no-cpu-limit
