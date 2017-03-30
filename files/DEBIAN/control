@@ -1,5 +1,5 @@
 Package: a2dp-receiver
-Version: 0.5.2
+Version: 0.6.0
 Section: metapackages
 Essential: No
 Depends: bluez, pulseaudio, pulseaudio-module-bluetooth, pulseaudio-module-zeroconf, rtkit, python-dbus

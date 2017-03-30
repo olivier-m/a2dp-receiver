@@ -1,0 +1,112 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import argparse
+import logging
+import re
+import signal
+from subprocess import call
+import sys
+
+import dbus
+import dbus.mainloop.glib
+
+try:
+    import gobject
+except ImportError:
+    from gi.repository import GObject as gobject
+
+
+logger = logging.getLogger("a2dp-agent")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
+BUS_NAME = 'org.bluez'
+
+DEVICE_PATTERN = re.compile(r'((?:[A-Z0-9]{2}_){5}(?:[A-Z0-9]{2}))')
+
+
+def set_volume(address, value):
+    cmd = '/usr/bin/pactl set-source-volume bluez_source.{} {}%'.format(
+        address.replace(':', '_'), value)
+    call(cmd, shell=True)
+    logger.info('Set device volume ({} {}%)'.format(address, value))
+
+
+def device_property_changed_cb(property_name, value, path,
+                               interface, device_path):
+    if property_name not in ('org.bluez.Device1', 'org.bluez.MediaTransport1'):
+        return
+
+    device_address = DEVICE_PATTERN.search(device_path)
+    if device_address is None:
+        logger.error('No device address found for {}'.format(device_path))
+        return
+    device_address = device_address.group(0).replace('_', ':')
+
+    logger.debug('Property change: {}, {}, {}, {}, {}'.format(
+        device_address, property_name, value, path, interface))
+
+    device = dbus.Interface(system_bus.get_object("org.bluez", device_path),
+                            "org.freedesktop.DBus.Properties")
+
+    try:
+        properties = device.GetAll(property_name)
+    except Exception as e:
+        logger.error('{}'.format(e))
+        return
+
+    if property_name == 'org.bluez.Device1':
+        if value.get('Connected'):
+            logger.info('Device connected ({})'.format(device_address))
+            set_volume(device_address, 100)
+        else:
+            logger.info('Device disconnected ({})'.format(device_address))
+
+    if property_name == 'org.bluez.MediaTransport1':
+        volume = properties.get('Volume')
+        if volume is None:
+            return
+
+        volume_percentage = format(volume / 1.27, '.0f')
+        set_volume(device_address, volume_percentage)
+
+
+def shutdown(signum, frame):
+    mainloop.quit()
+
+
+if __name__ == '__main__':
+    # shut down on a TERM signal
+    signal.signal(signal.SIGTERM, shutdown)
+
+    parser = argparse.ArgumentParser(description='A2DP Agent')
+    parser.add_argument('-l', '--loglevel',
+                        choices=['error', 'warning', 'info', 'debug'],
+                        default='info',
+                        help='Log level')
+    args = parser.parse_args()
+
+    logger.setLevel(getattr(logging, args.loglevel.upper()))
+    logger.info("Starting A2DP volume control")
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+    mainloop = gobject.MainLoop()
+
+    system_bus = dbus.SystemBus()
+    system_bus.add_signal_receiver(
+        device_property_changed_cb,
+        bus_name=BUS_NAME,
+        signal_name='PropertiesChanged',
+        path_keyword='device_path',
+        interface_keyword='interface')
+
+    try:
+        mainloop.run()
+    except KeyboardInterrupt:
+        pass
+    except:
+        logger.error("Unable to run the gobject main loop")
+        sys.exit(1)
+
+    logger.info("Shutting down")
+    sys.exit(0)

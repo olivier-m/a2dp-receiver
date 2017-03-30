@@ -1,0 +1,119 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+import argparse
+import logging
+import signal
+import sys
+
+import dbus
+import dbus.mainloop.glib
+import dbus.service
+
+try:
+    import gobject
+except ImportError:
+    from gi.repository import GObject as gobject
+
+
+logger = logging.getLogger("a2dp-agent")
+logger.addHandler(logging.StreamHandler(sys.stdout))
+
+BUS_NAME = 'org.bluez'
+AGENT_INTERFACE = 'org.bluez.Agent1'
+
+
+def set_trusted(path):
+    props = dbus.Interface(system_bus.get_object("org.bluez", path),
+                           "org.freedesktop.DBus.Properties")
+    props.Set("org.bluez.Device1", "Trusted", True)
+
+
+class Agent(dbus.service.Object):
+    exit_on_release = True
+
+    def set_exit_on_release(self, exit_on_release):
+        self.exit_on_release = exit_on_release
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
+    def Release(self):
+        logger.info('Release')
+        if self.exit_on_release:
+            mainloop.quit()
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="os", out_signature="")
+    def AuthorizeService(self, device, uuid):
+        logger.info('Authorize service ({}, {})'.format(device, uuid))
+        set_trusted(device)
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="s")
+    def RequestPinCode(self, device):
+        logger.info('Request PIN code ({})'.format(device))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="u")
+    def RequestPasskey(self, device):
+        logger.info('Request Passkey ({})'.format(device))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="ouq", out_signature="")
+    def DisplayPasskey(self, device, passkey, entered):
+        logger.info('Display Passkey ({}, {}, {})'
+                    .format(device, passkey, entered))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="os", out_signature="")
+    def DisplayPinCode(self, device, pincode):
+        logger.info('Display PIN code ({}, {})'.format(device, pincode))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="ou", out_signature="")
+    def RequestConfirmation(self, device, passkey):
+        logger.info('Request confirmation ({}, {})'.format(device, passkey))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="o", out_signature="")
+    def RequestAuthorization(self, device):
+        logger.info('Request authorization ({})'.format(device))
+
+    @dbus.service.method(AGENT_INTERFACE, in_signature="", out_signature="")
+    def Cancel(self):
+        logger.info('Cancel')
+
+
+def shutdown(signum, frame):
+    mainloop.quit()
+
+
+if __name__ == '__main__':
+    # shut down on a TERM signal
+    signal.signal(signal.SIGTERM, shutdown)
+
+    parser = argparse.ArgumentParser(description='A2DP Agent')
+    parser.add_argument('-l', '--loglevel',
+                        choices=['error', 'warning', 'info', 'debug'],
+                        default='info',
+                        help='Log level')
+    args = parser.parse_args()
+
+    logger.setLevel(getattr(logging, args.loglevel.upper()))
+    logger.info("Starting A2DP agent")
+
+    dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
+
+    mainloop = gobject.MainLoop()
+
+    system_bus = dbus.SystemBus()
+    path = "/a2dp/agent"
+    agent = Agent(system_bus, path)
+
+    obj = system_bus.get_object(BUS_NAME, "/org/bluez")
+    manager = dbus.Interface(obj, "org.bluez.AgentManager1")
+    manager.RegisterAgent(path, 'DisplayOnly')
+
+    manager.RequestDefaultAgent(path)
+
+    try:
+        mainloop.run()
+    except KeyboardInterrupt:
+        pass
+    except:
+        logger.error("Unable to run the gobject main loop")
+        sys.exit(1)
+
+    logger.info("Shutting down")
+    sys.exit(0)

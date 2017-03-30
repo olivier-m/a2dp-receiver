@@ -4,10 +4,10 @@ if [ "$1" = "remove" ]; then
 	systemctl disable pulseaudio.service > /dev/null 2>&1
 	systemctl stop pulseaudio.service > /dev/null 2>&1
 
-    systemctl disable bt-agent-autotrust.service > /dev/null 2>&1
-    systemctl stop bt-agent-autotrust.service > /dev/null 2>&1
+    systemctl disable a2dp-agent.service > /dev/null 2>&1
+    systemctl stop a2dp-agent.service > /dev/null 2>&1
 
-    systemctl disable bt-volume-control.service > /dev/null 2>&1
-    systemctl stop bt-volume-control.service > /dev/null 2>&1
+    systemctl disable a2dp-volume.service > /dev/null 2>&1
+    systemctl stop a2dp-volume.service > /dev/null 2>&1
 	exit 0
 fi

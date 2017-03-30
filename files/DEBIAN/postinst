@@ -26,18 +26,18 @@ if [ "$1" = "configure" ]; then
 	systemctl daemon-reload
 
 	systemctl enable pulseaudio.service > /dev/null 2>&1
-	systemctl enable bt-volume-control.service > /dev/null 2>&1
-	systemctl enable bt-agent-autotrust.service > /dev/null 2>&1
+	systemctl enable a2dp-volume.service > /dev/null 2>&1
+	systemctl enable a2dp-agent.service > /dev/null 2>&1
 
 	if ischroot; then exit 0; fi
 
 	systemctl start pulseaudio.service > /dev/null 2>&1
 	systemctl restart bluetooth.service > /dev/null 2>&1
 
-	systemctl start bt-volume-control.service > /dev/null 2>&1
-	systemctl restart bt-volume-control.service > /dev/null 2>&1
+	systemctl start a2dp-volume.service > /dev/null 2>&1
+	systemctl restart a2dp-volume.service > /dev/null 2>&1
 
-	systemctl start bt-agent-autotrust.service > /dev/null 2>&1
-	systemctl restart bt-agent-autotrust.service > /dev/null 2>&1
+	systemctl start a2dp-agent.service > /dev/null 2>&1
+	systemctl restart a2dp-agent.service > /dev/null 2>&1
 	exit 0
 fi

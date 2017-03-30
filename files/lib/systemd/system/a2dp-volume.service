@@ -8,5 +8,5 @@ WantedBy=multi-user.target
 [Service]
 User=pulse
 Type=simple
-ExecStart=/usr/bin/python /usr/bin/bt-volume-control.py
+ExecStart=/usr/lib/a2dp-receiver/volume-control
 KillSignal=SIGKILL
