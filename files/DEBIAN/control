@@ -1,9 +1,8 @@
-Origin: OSMC
 Package: a2dp-receiver
-Version: 0.5.1
+Version: 0.5.2
 Section: metapackages
 Essential: No
-Depends: bluez, pulseaudio, pulseaudio-module-bluetooth, pulseaudio-module-zeroconf, rtkit
+Depends: bluez, pulseaudio, pulseaudio-module-bluetooth, pulseaudio-module-zeroconf, rtkit, python-dbus
 Architecture: all
 Priority: required
 Maintainer: Olivier Meunier <olivier@neokraft.net>

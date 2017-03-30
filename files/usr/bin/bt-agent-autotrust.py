@@ -113,10 +113,11 @@ class Agent(dbus.service.Object):
                          in_signature="os", out_signature="")
     def AuthorizeService(self, device, uuid):
         print("AuthorizeService (%s, %s)" % (device, uuid))
-        authorize = ask("Authorize connection (yes/no): ")
-        if (authorize == "yes"):
-            return
-        raise Rejected("Connection rejected by user")
+        return
+        # authorize = ask("Authorize connection (yes/no): ")
+        # if (authorize == "yes"):
+        #     return
+        # raise Rejected("Connection rejected by user")
 
     @dbus.service.method(AGENT_INTERFACE,
                          in_signature="o", out_signature="s")

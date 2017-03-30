@@ -8,6 +8,7 @@ WantedBy=multi-user.target
 
 [Service]
 Type=idle
+ExecStartPre=/usr/bin/hciconfig hci0 up
 ExecStartPre=/usr/bin/hciconfig hci0 piscan
 ExecStart=/usr/bin/python /usr/bin/bt-agent-autotrust.py
 Restart=always
